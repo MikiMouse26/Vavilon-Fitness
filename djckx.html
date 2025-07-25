@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Select Area</title>
+  <style>
+    html, body {
+      margin: 0; padding: 0; height: 100%;
+      background-color: black;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      user-select: none;
+      font-family: sans-serif;
+    }
+    #container {
+      position: relative;
+      width: 90vmin;
+      height: 90vmin;
+      background: transparent;
+    }
+    canvas {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+      background: transparent;
+      display: block;
+    }
+    .node {
+      position: absolute;
+      width: 80px;
+      height: 80px;
+      background: white;
+      border-radius: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+      z-index: 1;
+      box-shadow: 0 0 15px rgba(255 255 255 / 0.2);
+      transition: transform 0.3s ease;
+    }
+    .node img {
+      width: 60px;
+      height: 60px;
+      object-fit: contain;
+      pointer-events: none;
+      user-select: none;
+    }
+    h1 {
+      color: darkgoldenrod;
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <canvas id="webCanvas"></canvas>
+    <h1> Select body area</h1>
+
+    <div class="node" id="node0" style="left: 45%; top: 5%;" onclick="downloadFile('/Users/maximfomenko/Desktop/Coding derection/global warms/templates/Новый документ2.pdf')">
+      <img src="/Users/maximfomenko/Desktop/Coding derection/global warms/static/img/IMG_0277-Photoroom.png" alt="White rounded rectangle with black silhouette of human head profile facing left"/>
+    </div>
+    <div class="node" id="node1" style="left: 15%; top: 30%;" onclick="downloadFile('/Users/maximfomenko/Desktop/Coding derection/global warms/templates/колени.pdf')">
+      <img src="/Users/maximfomenko/Desktop/Coding derection/global warms/static/img/IMG_0279-Photoroom.png" alt="White rounded rectangle with black silhouette of human back"/>
+    </div>
+    <div class="node" id="node2" style="left: 65%; top: 30%;" onclick="downloadFile('/Users/maximfomenko/Desktop/Coding derection/global warms/templates/живот.pdf')">
+      <img src="/Users/maximfomenko/Desktop/Coding derection/global warms/static/img/IMG_0278-Photoroom.png" alt="White rounded rectangle with black silhouette of human neck bent forward with pain waves symbol"/>
+    </div>
+    <div class="node" id="node3" style="left: 10%; top: 65%;" onclick="downloadFile('/Users/maximfomenko/Desktop/Coding derection/global warms/templates/кисти.pdf')">
+      <img src="/Users/maximfomenko/Desktop/Coding derection/global warms/static/img/IMG_0276-Photoroom.png" alt="White rounded rectangle with black silhouette of bent knee with visible joint lines"/>
+    </div>
+    <div class="node" id="node4" style="left: 60%; top: 70%;" onclick="downloadFile('/Users/maximfomenko/Desktop/Coding derection/global warms/templates/стоаы.pdf')">
+      <img src="/Users/maximfomenko/Desktop/Coding derection/global warms/static/img/IMG_0280-Photoroom.png" alt="White rounded rectangle with black silhouette of bent arm showing elbow pain lines"/>
+    </div>
+    <div class="node" id="node5" style="left: 85%; top: 55%;" onclick="downloadFile('/Users/maximfomenko/Desktop/Coding derection/global warms/templates/локти.pdf')">
+      <img src="/Users/maximfomenko/Desktop/Coding derection/global warms/static/img/IMG_0275-Photoroom.png" alt="White rounded rectangle with black silhouette of waist with pain waves"/>
+    </div>
+    <div class="node" id="node6" style="left: 40%; top: 90%;" onclick="downloadFile('/Users/maximfomenko/Desktop/Coding derection/global warms/templates/Новый документ.pdf')">
+      <img src="/Users/maximfomenko/Desktop/Coding derection/global warms/static/img/IMG_0271-Photoroom.png" alt="White rounded rectangle with black silhouette of foot side view"/>
+    </div>
+    <div class="node" id="node7" style="left: 80%; top: 10%;" onclick="downloadFile('/Users/maximfomenko/Desktop/Coding derection/global warms/templates/шея.pdf')">
+      <img src="/Users/maximfomenko/Desktop/Coding derection/global warms/static/img/IMG_0273-Photoroom.png" alt="White rounded rectangle with black silhouette of open hand, palm forward"/>
+    </div>
+
+    <script>
+      function downloadFile(filePath, fileName) {
+        const link = document.createElement('a');
+        link.href = filePath;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+
+      const container = document.getElementById('container');
+      const canvas = document.getElementById('webCanvas');
+      const ctx = canvas.getContext('2d');
+
+     
+      const nodes = [];
+      for(let i=0; i<8; i++) {
+        nodes.push(document.getElementById('node'+i));
+      }
+
+    
+      function resizeCanvas() {
+        canvas.width = container.clientWidth;
+        canvas.height = container.clientHeight;
+      }
+
+      resizeCanvas();
+      window.addEventListener('resize', () => {
+        resizeCanvas();
+      });
+
+      const connections = [
+        [0,1], [0,2], [0,7], [1,3], [2,4], [1,4], [3,6], [4,5], [5,7], [6,5]
+      ];
+
+      const oscillationAmplitude = 8; 
+      const oscillationSpeed = 0.0025; 
+
+      const nodePositions = [];
+
+      function initNodePositions() {
+        nodePositions.length = 0;
+        nodes.forEach(node => {
+          const styleLeftPercent = parseFloat(node.style.left);
+          const styleTopPercent = parseFloat(node.style.top);
+          const x = container.clientWidth * (styleLeftPercent/100) + node.clientWidth/2;
+          const y = container.clientHeight * (styleTopPercent/100) + node.clientHeight/2;
+          nodePositions.push({x, y});
+        });
+      }
+      initNodePositions();
+
+      let time = 0;
+      function animate() {
+        time += 1;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const oscillatedPositions = nodePositions.map((pos, i) => {
+          const offsetX = oscillationAmplitude * Math.sin(time * oscillationSpeed + i);
+          const offsetY = oscillationAmplitude * Math.cos(time * oscillationSpeed + i*1.5);
+          return {
+            x: pos.x + offsetX,
+            y: pos.y + offsetY
+          };
+        });
+
+        nodes.forEach((node, i) => {
+          const pos = oscillatedPositions[i];
+          const newLeft = pos.x - node.clientWidth/2;
+          const newTop = pos.y - node.clientHeight/2;
+          node.style.transform = `translate(${newLeft - nodePositions[i].x + node.clientWidth / 2}px, ${newTop - nodePositions[i].y + node.clientHeight / 2}px)`;
+        });
+
+        ctx.strokeStyle = 'white';
+        ctx.lineWidth = 1.8;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        connections.forEach(pair => {
+          const p1 = oscillatedPositions[pair[0]];
+          const p2 = oscillatedPositions[pair[1]];
+          ctx.moveTo(p1.x, p1.y);
+          ctx.lineTo(p2.x, p2.y);
+        });
+        ctx.stroke();
+
+        requestAnimationFrame(animate);
+      }
+
+      animate();
+    </script>
+  </div>
+</body>
+</html>
